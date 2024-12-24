@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ease Apply</title>
+    <style>
+        /* Using styling inspiration from style_josylad_grey.css */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        .input-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            color: #4a4a4a;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            color: white;
+            z-index: 1000;
+            display: none;
+        }
+
+        .notification.success {
+            background-color: #4CAF50;
+        }
+
+        .notification.error {
+            background-color: #f44336;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <h1>AIHawk Jobs Applier</h1>
+    
+    <div class="container">
+        <!-- Input Section -->
+        <div class="input-section">
+            <h2>Personal Information</h2>
+            <form id="jobApplicationForm">
+                <!-- Personal Information -->
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" required>
+                    
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required>
+                    
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone">
+                    
+                    <label for="linkedin">LinkedIn URL</label>
+                    <input type="url" id="linkedin">
+                    
+                    <label for="github">GitHub URL</label>
+                    <input type="url" id="github">
+                </div>
+
+                <!-- Job Details -->
+                <h2>Job Details</h2>
+                <div class="form-group">
+                    <label for="jobDescription">Job Description</label>
+                    <textarea id="jobDescription" rows="5"></textarea>
+                    
+                    <label for="resumeStyle">Resume Style</label>
+                    <select id="resumeStyle">
+                        <option value="style_cloyola">Classic Style</option>
+                        <option value="style_josylad_blue">Modern Blue</option>
+                        <option value="style_josylad_grey">Modern Grey</option>
+                        <option value="style_krishnavalliappan">Default</option>
+                        <option value="style_samodum_bold">Clean Blue</option>
+                    </select>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-group">
+                    <button type="button" onclick="generateResume()">Generate Resume</button>
+                    <button type="button" onclick="generateCoverLetter()">Generate Cover Letter</button>
+                    <button type="button" onclick="applyToJob()">Apply to Job</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <h2>Document Preview</h2>
+            <div id="previewContent">
+                <!-- Generated content will be displayed here -->
+            </div>
+        </div>
+    </div>
+    <div id="notification" class="notification"></div>
+    <div id="loading" class="loading">Processing...</div>
+
+    <script>
+        async function generateResume() {
+            try {
+                showLoading();
+                const formData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    linkedin: document.getElementById('linkedin').value,
+                    github: document.getElementById('github').value,
+                    style: document.getElementById('resumeStyle').value
+                };
+
+                const response = await fetch('http://localhost:5001/generate-resume', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate resume');
+                }
+
+                document.getElementById('previewContent').innerHTML = data.html;
+                showNotification('Resume generated successfully!', 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function generateCoverLetter() {
+            try {
+                showLoading();
+                const formData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    jobDescription: document.getElementById('jobDescription').value,
+                    style: document.getElementById('resumeStyle').value
+                };
+
+                const response = await fetch('http://localhost:5001/generate-cover-letter', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate cover letter');
+                }
+
+                document.getElementById('previewContent').innerHTML = data.html;
+                showNotification('Cover letter generated successfully!', 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+           // notification.className = notification ${type};
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
